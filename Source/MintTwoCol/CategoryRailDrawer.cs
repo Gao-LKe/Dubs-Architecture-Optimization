@@ -16,11 +16,17 @@ internal static class CategoryRailDrawer
     internal const float RailGap = 8f;
     internal const float HeaderHeight = 32f;
     internal const float MinGridWidth = 200f;
+    internal const float HeaderButtonWidth = 30f;
+    internal const float HeaderButtonSize = 24f;
 
     private const float DragThresholdSqr = 36f;
 
     private static Vector2 leftScroll;
     private static Vector2 rightScroll;
+    private static Vector2 hiddenScroll;
+
+    private static Texture2D hiddenIcon;
+    private static bool hiddenIconResolved;
 
     private static bool pressActive;
     private static ArchitectCategoryTab pressTab;
@@ -79,6 +85,165 @@ internal static class CategoryRailDrawer
     internal static void DrawRight(MainTabWindow_MintArchitect window, Rect box)
     {
         DrawRail(window, box, native: false, ref rightScroll);
+    }
+
+    internal static void DrawHidden(MainTabWindow_MintArchitect window, Rect box)
+    {
+        Text.Font = GameFont.Small;
+        Widgets.DrawMenuSection(box);
+        Rect inner = box.ContractedBy(4f);
+        if (inner.width < 20f || inner.height < 10f)
+        {
+            return;
+        }
+
+        List<ArchitectCategoryTab> rows = HiddenRows(window);
+        if (rows.Count == 0)
+        {
+            Text.Anchor = TextAnchor.MiddleCenter;
+            Widgets.Label(inner, Translator.Translate("MintTwoCol.NoHiddenCategories"));
+            Text.Anchor = TextAnchor.UpperLeft;
+            return;
+        }
+
+        Rect viewRect = new Rect(0f, 0f, inner.width - 16f, RowHeight * rows.Count);
+        GUI.BeginGroup(inner);
+        try
+        {
+            Widgets.BeginScrollView(new Rect(0f, 0f, inner.width, inner.height), ref hiddenScroll, viewRect, true);
+            try
+            {
+                GUI.BeginGroup(viewRect);
+                try
+                {
+                    float y = 0f;
+                    foreach (ArchitectCategoryTab tab in rows)
+                    {
+                        DrawRow(new Rect(0f, y, viewRect.width, RowHeight), tab, false);
+                        y += RowHeight;
+                    }
+
+                    HandleHiddenInput(viewRect, rows);
+                }
+                finally
+                {
+                    GUI.EndGroup();
+                }
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
+        }
+        finally
+        {
+            GUI.EndGroup();
+        }
+    }
+
+    private static void HandleHiddenInput(Rect viewRect, List<ArchitectCategoryTab> rows)
+    {
+        Event current = Event.current;
+        if (current == null
+            || current.type != EventType.MouseDown
+            || current.button != 0
+            || !viewRect.Contains(current.mousePosition))
+        {
+            return;
+        }
+
+        int index = Mathf.FloorToInt(current.mousePosition.y / RowHeight);
+        if (index < 0 || index >= rows.Count)
+        {
+            return;
+        }
+
+        SoundStarter.PlayOneShotOnCamera(SoundDefOf.Click, (Map)null);
+        Restore(rows[index]);
+        current.Use();
+    }
+
+    private static void Restore(ArchitectCategoryTab tab)
+    {
+        string defName = tab?.def?.defName;
+        if (string.IsNullOrEmpty(defName))
+        {
+            return;
+        }
+        if (MintTwoColMod.Settings.Hidden.Remove(defName))
+        {
+            MintTwoColMod.Settings.Write();
+        }
+    }
+
+    private static List<ArchitectCategoryTab> HiddenRows(MainTabWindow_MintArchitect window)
+    {
+        List<string> hidden = MintTwoColMod.Settings.Hidden;
+        List<ArchitectCategoryTab> result = new List<ArchitectCategoryTab>();
+        if (hidden.Count == 0)
+        {
+            return result;
+        }
+
+        List<ArchitectCategoryTab> all = MintBridge.GetCategories(window);
+        if (all == null)
+        {
+            return result;
+        }
+
+        Dictionary<string, ArchitectCategoryTab> byName = new Dictionary<string, ArchitectCategoryTab>(StringComparer.Ordinal);
+        foreach (ArchitectCategoryTab tab in all)
+        {
+            if (tab?.def?.defName != null)
+            {
+                byName[tab.def.defName] = tab;
+            }
+        }
+        foreach (string defName in hidden)
+        {
+            if (string.IsNullOrEmpty(defName))
+            {
+                continue;
+            }
+            if (byName.TryGetValue(defName, out ArchitectCategoryTab tab) && tab.Visible)
+            {
+                result.Add(tab);
+            }
+        }
+        return result;
+    }
+
+    internal static Rect HeaderButtonRect(Rect header)
+    {
+        return new Rect(
+            header.xMax + (HeaderButtonWidth - HeaderButtonSize) / 2f,
+            header.y + 2f,
+            HeaderButtonSize,
+            HeaderButtonSize);
+    }
+
+    internal static void DrawHiddenToggle(Rect rect)
+    {
+        if (MintTwoColMod.Settings.ShowHiddenRail)
+        {
+            Widgets.DrawHighlight(rect);
+        }
+        if (Widgets.ButtonImage(rect, HiddenIcon()))
+        {
+            MintTwoColMod.Settings.ShowHiddenRail = !MintTwoColMod.Settings.ShowHiddenRail;
+            MintTwoColMod.Settings.Write();
+        }
+        TooltipHandler.TipRegion(rect, Translator.Translate("MintTwoCol.HiddenRailToggle"));
+    }
+
+    private static Texture2D HiddenIcon()
+    {
+        if (!hiddenIconResolved)
+        {
+            hiddenIconResolved = true;
+            hiddenIcon = ContentFinder<Texture2D>.Get("UI/HiddenRailIcon", false) ?? TexButton.Minus;
+        }
+        return hiddenIcon;
     }
 
     private static void DrawRail(MainTabWindow_MintArchitect window, Rect box, bool native, ref Vector2 scroll)
@@ -170,7 +335,21 @@ internal static class CategoryRailDrawer
         switch (current.type)
         {
             case EventType.MouseDown:
-                if (current.button != 0 || !viewRect.Contains(current.mousePosition) || pressActive)
+                if (!viewRect.Contains(current.mousePosition) || pressActive)
+                {
+                    return;
+                }
+                if (current.button == 1)
+                {
+                    int rightClickIndex = Mathf.FloorToInt(current.mousePosition.y / RowHeight) - (native ? 1 : 0);
+                    if (rightClickIndex >= 0 && rightClickIndex < rows.Count)
+                    {
+                        Hide(window, rows[rightClickIndex]);
+                        current.Use();
+                    }
+                    return;
+                }
+                if (current.button != 0)
                 {
                     return;
                 }
@@ -233,6 +412,25 @@ internal static class CategoryRailDrawer
         }
     }
 
+    private static void Hide(MainTabWindow_MintArchitect window, ArchitectCategoryTab tab)
+    {
+        string defName = tab?.def?.defName;
+        if (string.IsNullOrEmpty(defName))
+        {
+            return;
+        }
+        if (!MintTwoColMod.Settings.Hidden.Contains(defName))
+        {
+            MintTwoColMod.Settings.Hidden.Add(defName);
+        }
+        if (MintBridge.GetSelected(window) == tab)
+        {
+            MintBridge.SetSelected(window, null);
+        }
+        ResetDrag();
+        MintTwoColMod.Settings.Write();
+    }
+
     private static int DragSlot(Vector2 mousePosition, bool native, int rowCount)
     {
         // 最近的行边界：行上半区插到该行之前，下半区插到该行之后。
@@ -261,9 +459,41 @@ internal static class CategoryRailDrawer
         rows.Insert(slot, moved);
 
         List<string> order = native ? MintTwoColMod.Settings.LeftOrder : MintTwoColMod.Settings.RightOrder;
-        order.Clear();
-        order.AddRange(rows.Select(tab => tab.def.defName));
+        MergeOrder(order, rows.Select(tab => tab.def.defName).ToList());
         MintTwoColMod.Settings.Write();
+    }
+
+    // 只重排可见项，隐藏项与失效条目保留在原槽位，隐藏后恢复仍回原位置。
+    private static void MergeOrder(List<string> order, List<string> visibleNames)
+    {
+        HashSet<string> visible = new HashSet<string>(visibleNames, StringComparer.Ordinal);
+        HashSet<string> seen = new HashSet<string>(StringComparer.Ordinal);
+        Queue<string> pending = new Queue<string>(visibleNames);
+        List<string> merged = new List<string>(order.Count + visibleNames.Count);
+        foreach (string name in order)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                continue;
+            }
+            if (visible.Contains(name))
+            {
+                if (seen.Add(name) && pending.Count > 0)
+                {
+                    merged.Add(pending.Dequeue());
+                }
+            }
+            else
+            {
+                merged.Add(name);
+            }
+        }
+        while (pending.Count > 0)
+        {
+            merged.Add(pending.Dequeue());
+        }
+        order.Clear();
+        order.AddRange(merged);
     }
 
     internal static List<ArchitectCategoryTab> Ordered(MainTabWindow_MintArchitect window, bool native)
@@ -275,7 +505,7 @@ internal static class CategoryRailDrawer
         }
 
         List<ArchitectCategoryTab> filtered = all
-            .Where(tab => tab != null && tab.Visible && MintBridge.IsNative(tab) == native)
+            .Where(tab => tab != null && tab.Visible && MintBridge.IsNative(tab) == native && !IsHidden(tab))
             .OrderByDescending(tab => tab.def.order)
             .ThenBy(tab => tab.def.defName, StringComparer.Ordinal)
             .ToList();
@@ -288,8 +518,17 @@ internal static class CategoryRailDrawer
         Dictionary<string, int> index = new Dictionary<string, int>();
         for (int i = 0; i < order.Count; i++)
         {
-            index[order[i]] = i;
+            if (!string.IsNullOrEmpty(order[i]))
+            {
+                index[order[i]] = i;
+            }
         }
         return filtered.OrderBy(tab => index.TryGetValue(tab.def.defName, out int position) ? position : int.MaxValue).ToList();
+    }
+
+    private static bool IsHidden(ArchitectCategoryTab tab)
+    {
+        string defName = tab?.def?.defName;
+        return !string.IsNullOrEmpty(defName) && MintTwoColMod.Settings.Hidden.Contains(defName);
     }
 }

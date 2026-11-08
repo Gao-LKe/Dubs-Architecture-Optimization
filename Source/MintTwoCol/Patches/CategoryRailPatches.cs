@@ -11,16 +11,24 @@ internal static class CategoryRailPatches
 {
     private static bool reportedLeftFailure;
     private static bool reportedRightFailure;
+    private static bool reportedHeaderButtonFailure;
+    private static bool reportedHiddenFailure;
     private static bool rightRailVisible;
+    private static bool hiddenRailVisible;
+    private static bool headerButtonVisible;
+    private static Rect headerButtonRect;
 
     internal static void Install(Harmony harmony)
     {
-        harmony.Patch(MintBridge.DrawArchitectList, prefix: GetPrefix(nameof(DrawArchitectListPrefix)));
-        harmony.Patch(MintBridge.ScrollBox, prefix: GetPrefix(nameof(ScrollBoxPrefix)));
-        harmony.Patch(MintBridge.DrawGridHeader, prefix: GetPrefix(nameof(DrawGridHeaderPrefix)));
+        harmony.Patch(MintBridge.DrawArchitectList, prefix: GetHarmonyMethod(nameof(DrawArchitectListPrefix)));
+        harmony.Patch(MintBridge.ScrollBox, prefix: GetHarmonyMethod(nameof(ScrollBoxPrefix)));
+        harmony.Patch(
+            MintBridge.DrawGridHeader,
+            prefix: GetHarmonyMethod(nameof(DrawGridHeaderPrefix)),
+            postfix: GetHarmonyMethod(nameof(DrawGridHeaderPostfix)));
     }
 
-    private static HarmonyMethod GetPrefix(string name)
+    private static HarmonyMethod GetHarmonyMethod(string name)
     {
         MethodInfo method = typeof(CategoryRailPatches).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic);
         return new HarmonyMethod(method);
@@ -52,11 +60,38 @@ internal static class CategoryRailPatches
     private static bool ScrollBoxPrefix(MainTabWindow_MintArchitect __instance, ref Rect canvas)
     {
         rightRailVisible = false;
+        hiddenRailVisible = false;
         if (!MintBridge.Available)
         {
             return true;
         }
-        if (canvas.width - CategoryRailDrawer.RightRailWidth - CategoryRailDrawer.RailGap < CategoryRailDrawer.MinGridWidth)
+
+        float railSpan = CategoryRailDrawer.RightRailWidth + CategoryRailDrawer.RailGap;
+        if (MintTwoColMod.Settings.ShowHiddenRail
+            && canvas.width - railSpan * 2f >= CategoryRailDrawer.MinGridWidth)
+        {
+            Rect hidden = new Rect(
+                canvas.xMax - CategoryRailDrawer.RightRailWidth,
+                canvas.y - CategoryRailDrawer.HeaderHeight,
+                CategoryRailDrawer.RightRailWidth,
+                canvas.height + CategoryRailDrawer.HeaderHeight);
+            try
+            {
+                CategoryRailDrawer.DrawHidden(__instance, hidden);
+                hiddenRailVisible = true;
+                canvas.width -= railSpan;
+            }
+            catch (Exception exception)
+            {
+                if (!reportedHiddenFailure)
+                {
+                    reportedHiddenFailure = true;
+                    Log.Error($"[{MintTwoColMod.HarmonyId}] Hidden category rail failed, it stays closed: {exception}");
+                }
+            }
+        }
+
+        if (canvas.width - railSpan < CategoryRailDrawer.MinGridWidth)
         {
             return true;
         }
@@ -71,7 +106,7 @@ internal static class CategoryRailPatches
         {
             CategoryRailDrawer.DrawRight(__instance, rail);
             rightRailVisible = true;
-            canvas.width -= CategoryRailDrawer.RightRailWidth + CategoryRailDrawer.RailGap;
+            canvas.width -= railSpan;
         }
         catch (Exception exception)
         {
@@ -87,9 +122,46 @@ internal static class CategoryRailPatches
 
     private static void DrawGridHeaderPrefix(ref Rect header)
     {
+        float railSpan = CategoryRailDrawer.RightRailWidth + CategoryRailDrawer.RailGap;
         if (rightRailVisible)
         {
-            header.width -= CategoryRailDrawer.RightRailWidth + CategoryRailDrawer.RailGap;
+            header.width -= railSpan;
+        }
+        if (hiddenRailVisible)
+        {
+            header.width -= railSpan;
+        }
+
+        headerButtonVisible = false;
+        if (!MintBridge.Available || header.width < CategoryRailDrawer.HeaderButtonWidth + 80f)
+        {
+            return;
+        }
+
+        headerButtonRect = CategoryRailDrawer.HeaderButtonRect(header);
+        header.width -= CategoryRailDrawer.HeaderButtonWidth;
+        headerButtonVisible = true;
+    }
+
+    private static void DrawGridHeaderPostfix()
+    {
+        if (!headerButtonVisible)
+        {
+            return;
+        }
+        headerButtonVisible = false;
+
+        try
+        {
+            CategoryRailDrawer.DrawHiddenToggle(headerButtonRect);
+        }
+        catch (Exception exception)
+        {
+            if (!reportedHeaderButtonFailure)
+            {
+                reportedHeaderButtonFailure = true;
+                Log.Error($"[{MintTwoColMod.HarmonyId}] Hidden rail button failed: {exception}");
+            }
         }
     }
 }
