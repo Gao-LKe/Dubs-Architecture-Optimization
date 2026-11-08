@@ -193,17 +193,21 @@ internal static class CategoryRailDrawer
                 break;
 
             case EventType.MouseDrag:
-                if (!pressActive || pressNative != native || dragging || !pressDraggable)
+                if (!pressActive || pressNative != native || !pressDraggable)
                 {
                     return;
                 }
-                if ((current.mousePosition - pressPosition).sqrMagnitude > DragThresholdSqr)
+                if (!dragging)
                 {
+                    if ((current.mousePosition - pressPosition).sqrMagnitude <= DragThresholdSqr)
+                    {
+                        return;
+                    }
                     dragging = true;
                     dragNative = native;
-                    dropSlot = DragSlot(current.mousePosition, native, rows.Count);
-                    current.Use();
                 }
+                dropSlot = DragSlot(current.mousePosition, native, rows.Count);
+                current.Use();
                 break;
 
             case EventType.MouseUp:
@@ -231,8 +235,9 @@ internal static class CategoryRailDrawer
 
     private static int DragSlot(Vector2 mousePosition, bool native, int rowCount)
     {
-        int slot = Mathf.FloorToInt(mousePosition.y / RowHeight) - (native ? 1 : 0);
-        return Mathf.Clamp(slot, 0, rowCount);
+        // 最近的行边界：行上半区插到该行之前，下半区插到该行之后。
+        int boundary = Mathf.RoundToInt(mousePosition.y / RowHeight) - (native ? 1 : 0);
+        return Mathf.Clamp(boundary, 0, rowCount);
     }
 
     private static void ApplyReorder(bool native, List<ArchitectCategoryTab> rows, ArchitectCategoryTab moved, int slot)
