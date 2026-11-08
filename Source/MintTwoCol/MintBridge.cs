@@ -24,6 +24,10 @@ internal static class MintBridge
     internal static MethodInfo SetInitialSizeAndPosition { get; private set; }
     internal static MethodInfo Parc { get; private set; }
     internal static FieldInfo SearchString { get; private set; }
+    internal static MethodInfo DoWindowContents { get; private set; }
+    internal static MethodInfo PinButton { get; private set; }
+    internal static MethodInfo ButtonImageFitted { get; private set; }
+    internal static FieldInfo AzTextureField { get; private set; }
 
     private static PropertyInfo cacheDesPanels;
     private static FieldInfo selectedTab;
@@ -41,6 +45,11 @@ internal static class MintBridge
         selectedTab = WindowType.GetField("SelectedTab", InstanceMembers);
         Parc = ResolveMethod("parc", typeof(Designator));
         SearchString = WindowType.GetField("searchString", BindingFlags.Static | BindingFlags.NonPublic);
+        DoWindowContents = ResolveMethod("DoWindowContents", typeof(Rect));
+        PinButton = WindowType.GetMethod("PinButton", InstanceMembers, null, new[] { typeof(Rect), typeof(DesignationCategoryDef) }, null);
+        ButtonImageFitted = typeof(Widgets).GetMethod("ButtonImageFitted", new[] { typeof(Rect), typeof(Texture2D), typeof(Color) });
+        Type researchWindow = WindowType.Assembly.GetType("DubsMintMenus.MainTabWindow_MintResearch");
+        AzTextureField = researchWindow?.GetField("az", BindingFlags.Public | BindingFlags.Static);
 
         if (DrawArchitectList == null || ScrollBox == null || DrawGridHeader == null || RequestedTabSize == null || SetInitialSizeAndPosition == null || cacheDesPanels == null || selectedTab == null)
         {
@@ -68,6 +77,7 @@ internal static class MintBridge
     {
         CategoryRailPatches.Install(harmony);
         WindowSizePatches.Install(harmony);
+        UiCleanupPatches.Install(harmony);
         try
         {
             PinyinSearchPatches.Install(harmony);
