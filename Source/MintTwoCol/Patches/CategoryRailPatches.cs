@@ -133,13 +133,13 @@ internal static class CategoryRailPatches
         }
 
         headerButtonVisible = false;
-        if (!MintBridge.Available || header.width < CategoryRailDrawer.HeaderButtonWidth + 80f)
+        if (!MintBridge.Available || header.width < CategoryRailDrawer.MinHeaderWidthForButton)
         {
             return;
         }
 
-        headerButtonRect = CategoryRailDrawer.HeaderButtonRect(header);
         header.width -= CategoryRailDrawer.HeaderButtonWidth;
+        headerButtonRect = CategoryRailDrawer.HeaderButtonRect(header);
         headerButtonVisible = true;
     }
 

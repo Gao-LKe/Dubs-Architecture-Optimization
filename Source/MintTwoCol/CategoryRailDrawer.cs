@@ -18,6 +18,8 @@ internal static class CategoryRailDrawer
     internal const float MinGridWidth = 200f;
     internal const float HeaderButtonWidth = 30f;
     internal const float HeaderButtonSize = 24f;
+    // 留出排序按钮、视图切换按钮与标题的最小空间，低于此值不画隐藏按钮。
+    internal const float MinHeaderWidthForButton = 110f;
 
     private const float DragThresholdSqr = 36f;
 
