@@ -1,4 +1,5 @@
 using HarmonyLib;
+using UnityEngine;
 using Verse;
 
 namespace MintTwoCol;
@@ -20,6 +21,22 @@ public sealed class MintTwoColMod : Mod
         LongEventHandler.QueueLongEvent(ApplyPatches, "MintTwoCol.LoadingLabel", false, null);
 
         Log.Message($"[{HarmonyId}] Loaded.");
+    }
+
+    public override string SettingsCategory()
+    {
+        return "Mint Two Columns";
+    }
+
+    public override void DoSettingsWindowContents(Rect inRect)
+    {
+        Listing_Standard listing = new Listing_Standard();
+        listing.Begin(inRect);
+        listing.CheckboxLabeled(
+            "MintTwoCol.DebugLogging".Translate(),
+            ref Settings.DebugLogging,
+            "MintTwoCol.DebugLoggingDesc".Translate());
+        listing.End();
     }
 
     private static void ApplyPatches()

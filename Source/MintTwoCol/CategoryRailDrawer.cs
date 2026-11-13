@@ -23,6 +23,20 @@ internal static class CategoryRailDrawer
 
     private const float DragThresholdSqr = 36f;
 
+    private static int loggedTarget = -2;
+
+    // 调试开关：需同时开启 RimWorld 开发者模式与本 Mod 设置里的调试日志。
+    private static bool DebugOn =>
+        Prefs.DevMode && MintTwoColMod.Settings != null && MintTwoColMod.Settings.DebugLogging;
+
+    private static void Dbg(string message)
+    {
+        if (DebugOn)
+        {
+            Log.Message($"[{MintTwoColMod.HarmonyId}/dbg] {message}");
+        }
+    }
+
     private static Vector2 leftScroll;
     private static Vector2 rightScroll;
     private static Vector2 hiddenScroll;
@@ -37,21 +51,30 @@ internal static class CategoryRailDrawer
     private static Vector2 pressPosition;
 
     private static bool dragging;
-    private static bool dragNative;
+    private static bool dropValid;
+    private static bool dropNative;
     private static int dropSlot;
+
+    private static Rect leftPort;
+    private static Rect rightPort;
+    private static Vector2 leftOrigin;
+    private static Vector2 rightOrigin;
 
     internal static void ResetDrag()
     {
         pressActive = false;
         pressTab = null;
         dragging = false;
+        dropValid = false;
         dropSlot = 0;
+        loggedTarget = -2;
     }
 
     private static bool loggedSummary;
 
     internal static void DrawLeft(MainTabWindow_MintArchitect window, Rect box)
     {
+        leftPort = Rect.zero;
         LogSummaryOnce(window);
         DrawRail(window, box, native: true, ref leftScroll);
     }
@@ -86,6 +109,7 @@ internal static class CategoryRailDrawer
 
     internal static void DrawRight(MainTabWindow_MintArchitect window, Rect box)
     {
+        rightPort = Rect.zero;
         DrawRail(window, box, native: false, ref rightScroll);
     }
 
@@ -258,6 +282,19 @@ internal static class CategoryRailDrawer
             return;
         }
 
+        // 端口去掉 16px 滚动条；origin 是内容坐标原点在窗口坐标中的位置。
+        Rect port = new Rect(inner.x, inner.y, Mathf.Max(0f, inner.width - 16f), inner.height);
+        if (native)
+        {
+            leftPort = port;
+            leftOrigin = inner.position - scroll;
+        }
+        else
+        {
+            rightPort = port;
+            rightOrigin = inner.position - scroll;
+        }
+
         List<ArchitectCategoryTab> rows = Ordered(window, native);
         ArchitectCategoryTab selected = MintBridge.GetSelected(window);
         int leadingRows = native ? 1 : 0;
@@ -287,10 +324,10 @@ internal static class CategoryRailDrawer
 
                     HandleInput(window, viewRect, native, rows);
 
-                    if (dragging && dragNative == native && rows.Count > 0)
+                    if (dragging && dropValid && dropNative == native)
                     {
-                        float lineY = RowHeight * (dropSlot + leadingRows);
-                        Widgets.DrawLineHorizontal(0f, lineY, viewRect.width);
+                        int lineSlot = Mathf.Clamp(dropSlot, 0, rows.Count);
+                        Widgets.DrawLineHorizontal(0f, RowHeight * (lineSlot + leadingRows), viewRect.width);
                     }
                 }
                 finally
@@ -334,7 +371,22 @@ internal static class CategoryRailDrawer
             return;
         }
 
-        switch (current.type)
+        // Unity 的 GUI.BeginScrollView 在鼠标移出滚动区域后会把 MouseDrag/MouseUp 改写成 Ignore，
+        // 拖拽期间按 rawType 还原，否则跨栏拖动离开源栏后收不到事件。
+        EventType type = current.type;
+        if (type == EventType.Ignore
+            && pressActive
+            && (current.rawType == EventType.MouseDrag || current.rawType == EventType.MouseUp))
+        {
+            type = current.rawType;
+        }
+
+        if ((pressActive || dragging) && type != EventType.Repaint && type != EventType.Layout)
+        {
+            Dbg($"Input type={type} raw={current.rawType} button={current.button} pos={current.mousePosition} native={native} pressNative={pressNative} draggable={pressDraggable} dragging={dragging} target={loggedTarget}");
+        }
+
+        switch (type)
         {
             case EventType.MouseDown:
                 if (!viewRect.Contains(current.mousePosition) || pressActive)
@@ -369,11 +421,13 @@ internal static class CategoryRailDrawer
                     pressNative = native;
                     pressDraggable = tab != null;
                     pressPosition = current.mousePosition;
+                    Dbg($"MouseDown native={native} row={rowIndex} tab={tab?.def?.defName ?? "All"} draggable={pressDraggable} click={current.mousePosition}");
                     current.Use();
                 }
                 break;
 
             case EventType.MouseDrag:
+            {
                 if (!pressActive || pressNative != native || !pressDraggable)
                 {
                     return;
@@ -385,22 +439,55 @@ internal static class CategoryRailDrawer
                         return;
                     }
                     dragging = true;
-                    dragNative = native;
+                    dropNative = native;
+                    Dbg($"DragStart native={native} pressPos={pressPosition} click={current.mousePosition} origin={OriginFor(native)}");
                 }
-                dropSlot = DragSlot(current.mousePosition, native, rows.Count);
+
+                Vector2 windowMouse = OriginFor(native) + current.mousePosition;
+                bool hasRail = TryGetRailAt(windowMouse, out bool targetNative);
+                int targetCode = !hasRail ? -1 : (targetNative ? 1 : 0);
+                if (targetCode != loggedTarget)
+                {
+                    loggedTarget = targetCode;
+                    Dbg($"DragTarget native={native} click={current.mousePosition} windowMouse={windowMouse} origin={OriginFor(native)} leftPort={leftPort} rightPort={rightPort} target={targetCode} frame={Time.frameCount}");
+                }
+                if (!hasRail)
+                {
+                    dropValid = false;
+                    current.Use();
+                    return;
+                }
+
+                if (targetNative != native)
+                {
+                    // 进入另一栏即移交：写侧别与目标栏顺序，之后按同栏拖拽继续。
+                    dropSlot = SlotFor(targetNative, windowMouse);
+                    ApplyCrossMove(window, pressTab, targetNative, dropSlot);
+                    pressNative = targetNative;
+                }
+
+                dropNative = targetNative;
+                dropSlot = SlotFor(targetNative, windowMouse);
+                dropValid = true;
                 current.Use();
                 break;
+            }
 
             case EventType.MouseUp:
+            {
                 if (!pressActive || pressNative != native)
                 {
                     return;
                 }
                 if (dragging)
                 {
-                    if (viewRect.Contains(current.mousePosition) && rows.Count > 0)
+                    Vector2 windowMouse = OriginFor(native) + current.mousePosition;
+                    bool hasRail = TryGetRailAt(windowMouse, out bool targetNative);
+                    int slot = SlotFor(native, windowMouse);
+                    Dbg($"MouseUp native={native} click={current.mousePosition} windowMouse={windowMouse} dropValid={dropValid} hasRail={hasRail} target={targetNative} slot={slot} rows={rows.Count}");
+                    if (dropValid && hasRail && targetNative == native && rows.Count > 0)
                     {
-                        ApplyReorder(native, rows, pressTab, DragSlot(current.mousePosition, native, rows.Count));
+                        ApplyReorder(native, rows, pressTab, slot);
                     }
                 }
                 else
@@ -411,6 +498,7 @@ internal static class CategoryRailDrawer
                 ResetDrag();
                 current.Use();
                 break;
+            }
         }
     }
 
@@ -433,11 +521,79 @@ internal static class CategoryRailDrawer
         MintTwoColMod.Settings.Write();
     }
 
-    private static int DragSlot(Vector2 mousePosition, bool native, int rowCount)
+    private static Vector2 OriginFor(bool native)
+    {
+        return native ? leftOrigin : rightOrigin;
+    }
+
+    private static int SlotFor(bool native, Vector2 windowMouse)
     {
         // 最近的行边界：行上半区插到该行之前，下半区插到该行之后。
-        int boundary = Mathf.RoundToInt(mousePosition.y / RowHeight) - (native ? 1 : 0);
-        return Mathf.Clamp(boundary, 0, rowCount);
+        return Mathf.RoundToInt((windowMouse.y - OriginFor(native).y) / RowHeight) - (native ? 1 : 0);
+    }
+
+    private static bool TryGetRailAt(Vector2 windowMouse, out bool targetNative)
+    {
+        if (leftPort.Contains(windowMouse))
+        {
+            targetNative = true;
+            return true;
+        }
+        if (rightPort.Contains(windowMouse))
+        {
+            targetNative = false;
+            return true;
+        }
+        targetNative = false;
+        return false;
+    }
+
+    private static void ApplyCrossMove(MainTabWindow_MintArchitect window, ArchitectCategoryTab moved, bool targetNative, int slot)
+    {
+        string defName = moved?.def?.defName;
+        if (string.IsNullOrEmpty(defName))
+        {
+            return;
+        }
+        Dbg($"CrossMove {defName} to {(targetNative ? "left" : "right")} slot={slot}");
+
+        // 复用同栏重排的写回路径：目标栏当前可见顺序 + 落点插入，再由 MergeOrder 保留隐藏/失效槽位。
+        List<string> visible = Ordered(window, targetNative).Select(tab => tab.def.defName).ToList();
+        visible.Remove(defName);
+        visible.Insert(Mathf.Clamp(slot, 0, visible.Count), defName);
+
+        ApplyForceSide(moved, targetNative);
+        MergeOrder(targetNative ? MintTwoColMod.Settings.LeftOrder : MintTwoColMod.Settings.RightOrder, visible);
+        MintTwoColMod.Settings.Write();
+    }
+
+    private static void ApplyForceSide(ArchitectCategoryTab tab, bool targetNative)
+    {
+        string defName = tab.def.defName;
+        List<string> forceLeft = MintTwoColMod.Settings.ForceLeft;
+        List<string> forceRight = MintTwoColMod.Settings.ForceRight;
+        if (targetNative == MintBridge.IsNative(tab))
+        {
+            forceLeft.Remove(defName);
+            forceRight.Remove(defName);
+            return;
+        }
+        if (targetNative)
+        {
+            if (!forceLeft.Contains(defName))
+            {
+                forceLeft.Add(defName);
+            }
+            forceRight.Remove(defName);
+        }
+        else
+        {
+            if (!forceRight.Contains(defName))
+            {
+                forceRight.Add(defName);
+            }
+            forceLeft.Remove(defName);
+        }
     }
 
     private static void ApplyReorder(bool native, List<ArchitectCategoryTab> rows, ArchitectCategoryTab moved, int slot)
@@ -460,6 +616,7 @@ internal static class CategoryRailDrawer
         slot = Mathf.Clamp(slot, 0, rows.Count);
         rows.Insert(slot, moved);
 
+        Dbg($"Reorder native={native} {moved.def.defName} from={from} slot={slot}");
         List<string> order = native ? MintTwoColMod.Settings.LeftOrder : MintTwoColMod.Settings.RightOrder;
         MergeOrder(order, rows.Select(tab => tab.def.defName).ToList());
         MintTwoColMod.Settings.Write();
@@ -507,7 +664,7 @@ internal static class CategoryRailDrawer
         }
 
         List<ArchitectCategoryTab> filtered = all
-            .Where(tab => tab != null && tab.Visible && MintBridge.IsNative(tab) == native && !IsHidden(tab))
+            .Where(tab => tab != null && tab.Visible && IsOnLeft(tab) == native && !IsHidden(tab))
             .OrderByDescending(tab => tab.def.order)
             .ThenBy(tab => tab.def.defName, StringComparer.Ordinal)
             .ToList();
@@ -526,6 +683,23 @@ internal static class CategoryRailDrawer
             }
         }
         return filtered.OrderBy(tab => index.TryGetValue(tab.def.defName, out int position) ? position : int.MaxValue).ToList();
+    }
+
+    private static bool IsOnLeft(ArchitectCategoryTab tab)
+    {
+        string defName = tab?.def?.defName;
+        if (!string.IsNullOrEmpty(defName))
+        {
+            if (MintTwoColMod.Settings.ForceLeft.Contains(defName))
+            {
+                return true;
+            }
+            if (MintTwoColMod.Settings.ForceRight.Contains(defName))
+            {
+                return false;
+            }
+        }
+        return MintBridge.IsNative(tab);
     }
 
     private static bool IsHidden(ArchitectCategoryTab tab)

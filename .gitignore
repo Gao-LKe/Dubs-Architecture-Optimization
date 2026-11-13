@@ -2,3 +2,6 @@
 Source/**/bin/
 Source/**/obj/
 
+
+# local codegraph index
+.codegraph/

@@ -2,4 +2,6 @@
 <LanguageData>
     <MintTwoCol.HiddenRailToggle>Hidden categories (right-click a category row to hide it)</MintTwoCol.HiddenRailToggle>
     <MintTwoCol.NoHiddenCategories>No hidden categories</MintTwoCol.NoHiddenCategories>
+    <MintTwoCol.DebugLogging>Log debug output</MintTwoCol.DebugLogging>
+    <MintTwoCol.DebugLoggingDesc>Only active while the game developer mode is enabled. Used to diagnose drag issues.</MintTwoCol.DebugLoggingDesc>
 </LanguageData>

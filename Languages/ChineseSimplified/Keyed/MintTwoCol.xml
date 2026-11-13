@@ -2,4 +2,6 @@
 <LanguageData>
     <MintTwoCol.HiddenRailToggle>隐藏分类栏（右键分类行可隐藏）</MintTwoCol.HiddenRailToggle>
     <MintTwoCol.NoHiddenCategories>暂无隐藏分类</MintTwoCol.NoHiddenCategories>
+    <MintTwoCol.DebugLogging>输出调试日志</MintTwoCol.DebugLogging>
+    <MintTwoCol.DebugLoggingDesc>仅在开启游戏开发者模式时生效，用于排查拖拽问题。</MintTwoCol.DebugLoggingDesc>
 </LanguageData>
