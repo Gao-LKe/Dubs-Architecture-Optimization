@@ -12,7 +12,9 @@ public sealed class TwoColSettings : ModSettings
     // 手动跨栏移动的分类：ForceLeft 内为原生但放到左栏，ForceRight 内为模组但放到右栏。
     public List<string> ForceLeft = new List<string>();
     public List<string> ForceRight = new List<string>();
+    public List<RailGroup> Groups = new List<RailGroup>();
     public bool ShowHiddenRail;
+    public bool DisableRightRail;
     public bool DebugLogging;
 
     public override void ExposeData()
@@ -23,7 +25,9 @@ public sealed class TwoColSettings : ModSettings
         Scribe_Collections.Look(ref Hidden, "hidden", LookMode.Value, Array.Empty<object>());
         Scribe_Collections.Look(ref ForceLeft, "forceLeft", LookMode.Value, Array.Empty<object>());
         Scribe_Collections.Look(ref ForceRight, "forceRight", LookMode.Value, Array.Empty<object>());
+        Scribe_Collections.Look(ref Groups, "groups", LookMode.Deep, Array.Empty<object>());
         Scribe_Values.Look(ref ShowHiddenRail, "showHiddenRail", false);
+        Scribe_Values.Look(ref DisableRightRail, "disableRightRail", false);
         Scribe_Values.Look(ref DebugLogging, "debugLogging", false);
         if (LeftOrder == null)
         {
@@ -45,6 +49,10 @@ public sealed class TwoColSettings : ModSettings
         {
             ForceRight = new List<string>();
         }
+        if (Groups == null)
+        {
+            Groups = new List<RailGroup>();
+        }
         LeftOrder.RemoveAll(string.IsNullOrEmpty);
         RightOrder.RemoveAll(string.IsNullOrEmpty);
         Hidden.RemoveAll(string.IsNullOrEmpty);
@@ -52,5 +60,21 @@ public sealed class TwoColSettings : ModSettings
         ForceRight.RemoveAll(string.IsNullOrEmpty);
         // 两表同时包含同名时以左栏为准，避免设置被手工改坏后侧别不确定。
         ForceRight.RemoveAll(name => ForceLeft.Contains(name));
+        // 手工改坏设置文件时只保留第一个同 ID 组，空 ID 组直接丢弃。
+        HashSet<string> seenGroups = new HashSet<string>(StringComparer.Ordinal);
+        Groups.RemoveAll(group =>
+        {
+            if (group == null || string.IsNullOrEmpty(group.Id))
+            {
+                return true;
+            }
+            if (!seenGroups.Add(group.Id))
+            {
+                return true;
+            }
+            HashSet<string> seenMembers = new HashSet<string>(StringComparer.Ordinal);
+            group.Members.RemoveAll(member => string.IsNullOrEmpty(member) || !seenMembers.Add(member));
+            return false;
+        });
     }
 }

@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using DubsMintMenus;
 using HarmonyLib;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -16,7 +18,9 @@ internal static class CategoryRailPatches
     private static bool rightRailVisible;
     private static bool hiddenRailVisible;
     private static bool headerButtonVisible;
+    private static bool newGroupButtonVisible;
     private static Rect headerButtonRect;
+    private static Rect newGroupButtonRect;
 
     internal static void Install(Harmony harmony)
     {
@@ -26,6 +30,10 @@ internal static class CategoryRailPatches
             MintBridge.DrawGridHeader,
             prefix: GetHarmonyMethod(nameof(DrawGridHeaderPrefix)),
             postfix: GetHarmonyMethod(nameof(DrawGridHeaderPostfix)));
+        if (MintBridge.RightClickMenu != null)
+        {
+            harmony.Patch(MintBridge.RightClickMenu, prefix: GetHarmonyMethod(nameof(RightClickMenuPrefix)));
+        }
     }
 
     private static HarmonyMethod GetHarmonyMethod(string name)
@@ -91,6 +99,11 @@ internal static class CategoryRailPatches
             }
         }
 
+        if (MintTwoColMod.Settings.DisableRightRail)
+        {
+            return true;
+        }
+
         if (canvas.width - railSpan < CategoryRailDrawer.MinGridWidth)
         {
             return true;
@@ -120,8 +133,30 @@ internal static class CategoryRailPatches
         return true;
     }
 
-    private static void DrawGridHeaderPrefix(ref Rect header)
+    // Mint 网格/列表右键菜单入口：建筑项上追加「加入项组」，原有右键选项原样保留。
+    private static bool RightClickMenuPrefix(Designator des)
     {
+        if (!(des is Designator_Place place) || !(place.PlacingDef is ThingDef def) || string.IsNullOrEmpty(def.defName))
+        {
+            return true;
+        }
+
+        List<FloatMenuOption> options = new List<FloatMenuOption>();
+        if (des.RightClickFloatMenuOptions != null)
+        {
+            options.AddRange(des.RightClickFloatMenuOptions);
+        }
+        options.AddRange(CategoryRailDrawer.ItemGroupMenuOptions(def.defName));
+
+        Event.current.Use();
+        if (options.Count > 0)
+        {
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+        return false;
+    }
+
+    private static void DrawGridHeaderPrefix(ref Rect header)    {
         float railSpan = CategoryRailDrawer.RightRailWidth + CategoryRailDrawer.RailGap;
         if (rightRailVisible)
         {
@@ -133,18 +168,39 @@ internal static class CategoryRailPatches
         }
 
         headerButtonVisible = false;
-        if (!MintBridge.Available || header.width < CategoryRailDrawer.MinHeaderWidthForButton)
+        newGroupButtonVisible = false;
+        if (!MintBridge.Available || header.width < CategoryRailDrawer.MinHeaderWidthForButton + CategoryRailDrawer.HeaderButtonWidth)
         {
             return;
         }
 
+        // 最右是隐藏栏开关，其左侧是新建组按钮。
         header.width -= CategoryRailDrawer.HeaderButtonWidth;
         headerButtonRect = CategoryRailDrawer.HeaderButtonRect(header);
         headerButtonVisible = true;
+        header.width -= CategoryRailDrawer.HeaderButtonWidth;
+        newGroupButtonRect = CategoryRailDrawer.HeaderButtonRect(header);
+        newGroupButtonVisible = true;
     }
 
     private static void DrawGridHeaderPostfix()
     {
+        if (newGroupButtonVisible)
+        {
+            try
+            {
+                CategoryRailDrawer.DrawNewGroupButton(newGroupButtonRect);
+            }
+            catch (Exception exception)
+            {
+                if (!reportedHeaderButtonFailure)
+                {
+                    reportedHeaderButtonFailure = true;
+                    Log.Error($"[{MintTwoColMod.HarmonyId}] New group button failed: {exception}");
+                }
+            }
+        }
+
         if (!headerButtonVisible)
         {
             return;

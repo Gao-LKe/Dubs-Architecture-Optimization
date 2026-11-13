@@ -20,9 +20,11 @@ internal static class MintBridge
     internal static MethodInfo DrawArchitectList { get; private set; }
     internal static MethodInfo ScrollBox { get; private set; }
     internal static MethodInfo DrawGridHeader { get; private set; }
+    internal static MethodInfo GetDesignators { get; private set; }
     internal static MethodInfo RequestedTabSize { get; private set; }
     internal static MethodInfo SetInitialSizeAndPosition { get; private set; }
     internal static MethodInfo Parc { get; private set; }
+    internal static MethodInfo RightClickMenu { get; private set; }
     internal static FieldInfo SearchString { get; private set; }
     internal static MethodInfo DoWindowContents { get; private set; }
     internal static MethodInfo PinButton { get; private set; }
@@ -39,11 +41,13 @@ internal static class MintBridge
         DrawArchitectList = ResolveMethod("DrawArchitectList", typeof(Rect));
         ScrollBox = ResolveMethod("ScrollBox", typeof(Rect));
         DrawGridHeader = ResolveMethod("DrawGridHeader", typeof(Rect));
+        GetDesignators = ResolveMethod("GetDesignators", typeof(ArchitectCategoryTab));
         RequestedTabSize = WindowType.GetProperty("RequestedTabSize", InstanceMembers)?.GetGetMethod(true);
         SetInitialSizeAndPosition = WindowType.GetMethod("SetInitialSizeAndPosition", InstanceMembers);
         cacheDesPanels = WindowType.GetProperty("CacheDesPanels", InstanceMembers);
         selectedTab = WindowType.GetField("SelectedTab", InstanceMembers);
         Parc = ResolveMethod("parc", typeof(Designator));
+        RightClickMenu = ResolveMethod("RightClickMenu", typeof(Designator));
         SearchString = WindowType.GetField("searchString", BindingFlags.Static | BindingFlags.NonPublic);
         DoWindowContents = ResolveMethod("DoWindowContents", typeof(Rect));
         PinButton = WindowType.GetMethod("PinButton", InstanceMembers, null, new[] { typeof(Rect), typeof(DesignationCategoryDef) }, null);
@@ -76,6 +80,7 @@ internal static class MintBridge
     private static void PatchAll(Harmony harmony)
     {
         CategoryRailPatches.Install(harmony);
+        GridFilterPatches.Install(harmony);
         WindowSizePatches.Install(harmony);
         UiCleanupPatches.Install(harmony);
         try

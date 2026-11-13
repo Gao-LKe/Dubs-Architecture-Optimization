@@ -27,12 +27,17 @@ internal static class WindowSizePatches
 
     private static void RequestedTabSizePostfix(ref Vector2 __result)
     {
+        if (MintTwoColMod.Settings.DisableRightRail)
+        {
+            return;
+        }
         __result.x += CategoryRailDrawer.RightRailWidth;
     }
 
     private static void SetInitialSizeAndPositionPostfix(MainTabWindow_MintArchitect __instance)
     {
-        if (DubsMintMenus.Settings.BuildMenuSize == default(Vector2))
+        if (DubsMintMenus.Settings.BuildMenuSize == default(Vector2)
+            || MintTwoColMod.Settings.DisableRightRail)
         {
             return;
         }
@@ -48,6 +53,10 @@ internal static class WindowSizePatches
 
     private static void PreClosePrefix(MainTabWindow_MintArchitect __instance)
     {
+        if (MintTwoColMod.Settings.DisableRightRail)
+        {
+            return;
+        }
         Rect rect = __instance.windowRect;
         rect.width = Mathf.Max(0f, rect.width - CategoryRailDrawer.RightRailWidth);
         __instance.windowRect = rect;
@@ -55,9 +64,12 @@ internal static class WindowSizePatches
 
     private static void PreClosePostfix(MainTabWindow_MintArchitect __instance)
     {
-        Rect rect = __instance.windowRect;
-        rect.width += CategoryRailDrawer.RightRailWidth;
-        __instance.windowRect = rect;
+        if (!MintTwoColMod.Settings.DisableRightRail)
+        {
+            Rect rect = __instance.windowRect;
+            rect.width += CategoryRailDrawer.RightRailWidth;
+            __instance.windowRect = rect;
+        }
         CategoryRailDrawer.ResetDrag();
     }
 }

@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+    <MintTwoCol.LoadingLabel>正在应用 Mint Two Columns</MintTwoCol.LoadingLabel>
     <MintTwoCol.HiddenRailToggle>隐藏分类栏（右键分类行可隐藏）</MintTwoCol.HiddenRailToggle>
     <MintTwoCol.NoHiddenCategories>暂无隐藏分类</MintTwoCol.NoHiddenCategories>
     <MintTwoCol.DebugLogging>输出调试日志</MintTwoCol.DebugLogging>
     <MintTwoCol.DebugLoggingDesc>仅在开启游戏开发者模式时生效，用于排查拖拽问题。</MintTwoCol.DebugLoggingDesc>
+    <MintTwoCol.DisableRightRail>关闭右栏</MintTwoCol.DisableRightRail>
+    <MintTwoCol.DisableRightRailDesc>把右栏的分类和组全部并入左栏，网格占用剩余宽度。</MintTwoCol.DisableRightRailDesc>
+    <MintTwoCol.NewGroup>新建自定义组</MintTwoCol.NewGroup>
+    <MintTwoCol.NewItemGroup>建筑标签</MintTwoCol.NewItemGroup>
+    <MintTwoCol.NewCategoryGroup>建筑类标签</MintTwoCol.NewCategoryGroup>
+    <MintTwoCol.RenameGroup>重命名</MintTwoCol.RenameGroup>
+    <MintTwoCol.RemoveMember>移出成员</MintTwoCol.RemoveMember>
+    <MintTwoCol.DeleteGroup>删除组</MintTwoCol.DeleteGroup>
+    <MintTwoCol.NoMembers>暂无成员</MintTwoCol.NoMembers>
+    <MintTwoCol.AddToGroup>加入建筑标签</MintTwoCol.AddToGroup>
+    <MintTwoCol.RemoveFromGroup>移出所在建筑标签</MintTwoCol.RemoveFromGroup>
 </LanguageData>

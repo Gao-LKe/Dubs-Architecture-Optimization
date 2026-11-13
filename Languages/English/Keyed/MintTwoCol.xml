@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+    <MintTwoCol.LoadingLabel>Applying Mint Two Columns</MintTwoCol.LoadingLabel>
     <MintTwoCol.HiddenRailToggle>Hidden categories (right-click a category row to hide it)</MintTwoCol.HiddenRailToggle>
     <MintTwoCol.NoHiddenCategories>No hidden categories</MintTwoCol.NoHiddenCategories>
     <MintTwoCol.DebugLogging>Log debug output</MintTwoCol.DebugLogging>
     <MintTwoCol.DebugLoggingDesc>Only active while the game developer mode is enabled. Used to diagnose drag issues.</MintTwoCol.DebugLoggingDesc>
+    <MintTwoCol.DisableRightRail>Disable right column</MintTwoCol.DisableRightRail>
+    <MintTwoCol.DisableRightRailDesc>Moves every category and group from the right column into the left one; the grid uses the remaining width.</MintTwoCol.DisableRightRailDesc>
+    <MintTwoCol.NewGroup>New custom group</MintTwoCol.NewGroup>
+    <MintTwoCol.NewItemGroup>Building tag</MintTwoCol.NewItemGroup>
+    <MintTwoCol.NewCategoryGroup>Building category tag</MintTwoCol.NewCategoryGroup>
+    <MintTwoCol.RenameGroup>Rename</MintTwoCol.RenameGroup>
+    <MintTwoCol.RemoveMember>Remove member</MintTwoCol.RemoveMember>
+    <MintTwoCol.DeleteGroup>Delete group</MintTwoCol.DeleteGroup>
+    <MintTwoCol.NoMembers>No members</MintTwoCol.NoMembers>
+    <MintTwoCol.AddToGroup>Add to building tag</MintTwoCol.AddToGroup>
+    <MintTwoCol.RemoveFromGroup>Remove from building tag</MintTwoCol.RemoveFromGroup>
 </LanguageData>

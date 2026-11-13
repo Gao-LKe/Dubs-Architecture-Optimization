@@ -36,6 +36,10 @@ public sealed class MintTwoColMod : Mod
             "MintTwoCol.DebugLogging".Translate(),
             ref Settings.DebugLogging,
             "MintTwoCol.DebugLoggingDesc".Translate());
+        listing.CheckboxLabeled(
+            "MintTwoCol.DisableRightRail".Translate(),
+            ref Settings.DisableRightRail,
+            "MintTwoCol.DisableRightRailDesc".Translate());
         listing.End();
     }
 
