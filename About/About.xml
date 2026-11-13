@@ -3,9 +3,7 @@
     <name>Mint Two Columns</name>
     <author>GK</author>
     <packageId>gk.minttwocol</packageId>
-    <description>把 Dubs Mint Menus 建筑窗口左侧的分类栏拆成左右两栏：左栏放核心与官方 DLC 分类，右栏放其他 Mod 新增的分类，中间建筑网格与信息卡保持原位。两栏内的分类行可拖拽调整顺序，顺序自动保存。需要 Harmony 与 Dubs Mint Menus。可选：订阅并启用「拼音搜索 Pinyin Quick Search」（steam://url/CommunityFilePage/3244870513）后，建筑搜索框额外支持全拼与首字母拼音，未启用不影响其他功能。
-
-[AI 辅助生成]</description>
+    <description>把 Dubs Mint Menus 建筑窗口左侧的分类栏拆成左右两栏：左栏放核心与官方 DLC 分类，右栏放其他 Mod 新增的分类，中间建筑网格与信息卡保持原位。两栏内的分类行可拖拽调整顺序，顺序自动保存。需要 Harmony 与 Dubs Mint Menus。可选：订阅并启用「拼音搜索 Pinyin Quick Search」（steam://url/CommunityFilePage/3244870513）后，建筑搜索框额外支持全拼与首字母拼音，未启用不影响其他功能。</description>
     <supportedVersions>
         <li>1.7</li>
     </supportedVersions>
