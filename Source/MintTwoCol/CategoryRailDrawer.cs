@@ -125,8 +125,12 @@ internal static class CategoryRailDrawer
     internal static void DrawLeft(MainTabWindow_MintArchitect window, Rect box)
     {
         leftPort = Rect.zero;
-        // 右栏未绘制时（关闭右栏或宽度不足）不能留下上一帧的命中区域。
-        rightPort = Rect.zero;
+        // 左栏先于右栏绘制，左栏的拖拽命中要沿用上一帧的右栏端口，不能每帧清零；
+        // 只有关闭右栏时右栏端口才需要作废。
+        if (MintTwoColMod.Settings.DisableRightRail)
+        {
+            rightPort = Rect.zero;
+        }
         LogSummaryOnce(window);
         DrawRail(window, box, native: true, ref leftScroll);
     }
