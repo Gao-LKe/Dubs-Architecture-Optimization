@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-    <name>Mint Two Columns</name>
+    <name>更友好的Dubs建筑菜单 | Dubs Architecture Optimization</name>
     <author>GK</author>
     <packageId>gk.minttwocol</packageId>
-    <description>把 Dubs Mint Menus 建筑窗口左侧的分类栏拆成左右两栏：左栏放核心与官方 DLC 分类，右栏放其他 Mod 新增的分类，中间建筑网格与信息卡保持原位。两栏内的分类行可拖拽调整顺序，顺序自动保存。需要 Harmony 与 Dubs Mint Menus。可选：订阅并启用「拼音搜索 Pinyin Quick Search」（steam://url/CommunityFilePage/3244870513）后，建筑搜索框额外支持全拼与首字母拼音，未启用不影响其他功能。
+    <description><![CDATA[这个mod在dubs的基础上实现，因为我特别喜欢dubs的快捷轮盘功能，但它的建筑菜单满足不了我的期待，所以我写了这个mod，并且只围绕一个点——如何方便快捷的找建筑；如果你不知道如何开启dubs的建筑菜单，请查看图1和图2。
+（1）拆分：加上右栏，可以在mod配置中关闭右栏位。左栏放核心与官方 DLC 分类，右栏放其他 Mod 新增的分类，中间建筑网格与信息卡保持原位。
+（2）自定义排序：两栏内的分类可上下左右拖拽调整顺序，顺序自动保存。
+（3）建筑允许拼音和汉字搜索：可选项，订阅并启用「拼音搜索 Pinyin Quick Search」后，建筑搜索框额外支持全拼与首字母拼音，未启用不影响其他功能。
+（4）临时隐藏建筑分类：隐藏建筑菜单内的分类，操作方法：直接右键点击。复原方法：点右上角那个眼睛按钮，然后点击隐藏的菜单项目即可复原。
+（5）自定义建筑标签（带星号那个），在右上角的+号处新增。在网格内的建筑右键可以选择加入到“建筑标签”或者移出。
+（6）建筑类标签（三角尖那个），在右上角的+号处新增。两栏内的建筑类直接拖动到“建筑类”标签，也可直接拖拽移出。删除、重命名、移出成员靠右键操作。
 
-Splits the Dubs Mint Menus architect category rail into two columns: core and official DLC categories on the left, mod-added categories on the right, with the grid and info card unchanged in the middle. Rows can be drag-reordered and the order is saved automatically. Requires Harmony and Dubs Mint Menus. Optional: with Pinyin Quick Search (steam://url/CommunityFilePage/3244870513) enabled, the architect search box also matches full pinyin and initials; everything else works without it.</description>
+个人碎碎念：目前创意工坊上针对建筑UI调整的还有两款也很推荐，一个better architecture menu ，另一个是LSF。前者有自动对建筑进行分类和增加了自定义建筑大类，整体贴合原版设计、后者是类似Dubs建筑菜单，美观程度和功能上很出色。
+
+后面也有考虑过要不要再做一些美化，比如图标和界面颜色之类的，但我想了想，“不是灰黑灰黑的界面你咋知道你玩的是环世界”（狗头^_^），所以后面也没在做调整了。如果这个mod帮到了你，希望你能点点赞，让更多的人知道它，这也会给我更多的鼓励来维护这个mod。祝你玩的愉快！]]></description>
     <supportedVersions>
         <li>1.7</li>
     </supportedVersions>

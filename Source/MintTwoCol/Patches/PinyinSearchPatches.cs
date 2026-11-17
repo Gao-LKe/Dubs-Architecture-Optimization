@@ -30,6 +30,13 @@ internal static class PinyinSearchPatches
             return;
         }
 
+        // 原 parc 先检查 Gizmo.Visible（研究、科技等级、隐藏项等），兜底匹配不能绕过它，
+        // 否则未研究出来的建筑会被 defName/拼音搜出来。
+        if (!p.Visible)
+        {
+            return;
+        }
+
         string query = MintBridge.GetSearchString();
         if (string.IsNullOrEmpty(query))
         {

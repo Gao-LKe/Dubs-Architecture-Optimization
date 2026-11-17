@@ -25,7 +25,7 @@ public sealed class MintTwoColMod : Mod
 
     public override string SettingsCategory()
     {
-        return "Mint Two Columns";
+        return "更友好的Dubs建筑菜单";
     }
 
     public override void DoSettingsWindowContents(Rect inRect)
