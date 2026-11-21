@@ -7,7 +7,7 @@ using UnityEngine;
 using Verse;
 using Verse.Sound;
 
-namespace MintTwoCol;
+namespace DubsArchitectureOptimization;
 
 internal static class CategoryRailDrawer
 {
@@ -346,8 +346,8 @@ internal static class CategoryRailDrawer
         if (!groupIconsResolved)
         {
             groupIconsResolved = true;
-            groupExpandedIcon = ContentFinder<Texture2D>.Get("UI/MintTwoColArrowDown", false) ?? TexButton.Minus;
-            groupCollapsedIcon = ContentFinder<Texture2D>.Get("UI/MintTwoColArrowRight", false) ?? TexButton.Plus;
+            groupExpandedIcon = ContentFinder<Texture2D>.Get("UI/DubsArchitectureOptimizationArrowDown", false) ?? TexButton.Minus;
+            groupCollapsedIcon = ContentFinder<Texture2D>.Get("UI/DubsArchitectureOptimizationArrowRight", false) ?? TexButton.Plus;
         }
         return expanded ? groupExpandedIcon : groupCollapsedIcon;
     }
@@ -357,7 +357,7 @@ internal static class CategoryRailDrawer
         if (!groupItemIconResolved)
         {
             groupItemIconResolved = true;
-            groupItemIcon = ContentFinder<Texture2D>.Get("UI/MintTwoColGroup", false) ?? TexButton.Plus;
+            groupItemIcon = ContentFinder<Texture2D>.Get("UI/DubsArchitectureOptimizationGroup", false) ?? TexButton.Plus;
         }
         return groupItemIcon;
     }

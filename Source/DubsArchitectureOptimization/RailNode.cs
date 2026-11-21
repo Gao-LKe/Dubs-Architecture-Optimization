@@ -4,7 +4,7 @@ using DubsMintMenus;
 using RimWorld;
 using Verse;
 
-namespace MintTwoCol;
+namespace DubsArchitectureOptimization;
 
 // 栏行基类：分类、自定义组与组内子行共用拖拽、排序、右键隐藏行为。
 internal abstract class RailNode

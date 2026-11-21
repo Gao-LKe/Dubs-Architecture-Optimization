@@ -4,8 +4,8 @@
     <OutputType>Library</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <AssemblyName>MintTwoCol</AssemblyName>
-    <RootNamespace>MintTwoCol</RootNamespace>
+    <AssemblyName>DubsArchitectureOptimization</AssemblyName>
+    <RootNamespace>DubsArchitectureOptimization</RootNamespace>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <DebugType>none</DebugType>

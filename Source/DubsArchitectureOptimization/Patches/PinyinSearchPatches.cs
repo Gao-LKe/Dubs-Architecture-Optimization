@@ -4,7 +4,7 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 
-namespace MintTwoCol;
+namespace DubsArchitectureOptimization;
 
 // Mint 的建筑搜索不走原版 QuickSearchWidget，而是自己的 parc(Designator)：
 // 对 label、分类 label、Mod 名、材料类别 label 做 OrdinalIgnoreCase 包含判断。

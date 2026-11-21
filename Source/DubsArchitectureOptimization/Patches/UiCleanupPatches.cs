@@ -4,7 +4,7 @@ using HarmonyLib;
 using UnityEngine;
 using Verse;
 
-namespace MintTwoCol;
+namespace DubsArchitectureOptimization;
 
 // 两栏顺序完全由本 Mod 管理，Mint 的 A-Z 排序与置顶按钮点击后不影响行序，直接隐藏。
 internal static class UiCleanupPatches

@@ -3,7 +3,7 @@ using System.Reflection;
 using HarmonyLib;
 using Verse;
 
-namespace MintTwoCol;
+namespace DubsArchitectureOptimization;
 
 // 软依赖：仅在检测到 Pinyin Quick Search（cedaro.PinyinQuickSearch）时启用。
 // 该 Mod 公开了 PinyinQuickSearch.PinyinTool.GetSearchTerm(string)，返回

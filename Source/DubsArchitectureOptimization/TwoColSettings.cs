@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Verse;
 
-namespace MintTwoCol;
+namespace DubsArchitectureOptimization;
 
 public sealed class TwoColSettings : ModSettings
 {

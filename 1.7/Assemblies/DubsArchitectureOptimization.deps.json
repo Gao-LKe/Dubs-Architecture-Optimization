@@ -6,15 +6,15 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v10.0": {
-      "MintTwoCol/1.0.0": {
+      "DubsArchitectureOptimization/1.0.0": {
         "runtime": {
-          "MintTwoCol.dll": {}
+          "DubsArchitectureOptimization.dll": {}
         }
       }
     }
   },
   "libraries": {
-    "MintTwoCol/1.0.0": {
+    "DubsArchitectureOptimization/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

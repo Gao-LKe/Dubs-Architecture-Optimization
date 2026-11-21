@@ -4,7 +4,7 @@ using System.Reflection;
 using HarmonyLib;
 using Verse;
 
-namespace MintTwoCol;
+namespace DubsArchitectureOptimization;
 
 // 普通网格过滤器：应用用户隐藏，选中建筑项组时只保留该组成员。
 internal static class GridFilterPatches

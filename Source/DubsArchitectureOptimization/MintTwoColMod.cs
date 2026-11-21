@@ -2,11 +2,11 @@ using HarmonyLib;
 using UnityEngine;
 using Verse;
 
-namespace MintTwoCol;
+namespace DubsArchitectureOptimization;
 
 public sealed class MintTwoColMod : Mod
 {
-    public const string HarmonyId = "GK.MintTwoCol";
+    public const string HarmonyId = "GK.DubsArchitectureOptimization";
 
     internal static MintTwoColMod Instance { get; private set; }
     internal static TwoColSettings Settings { get; private set; }

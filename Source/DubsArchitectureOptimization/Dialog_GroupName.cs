@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using Verse;
 
-namespace MintTwoCol;
+namespace DubsArchitectureOptimization;
 
 // 自定义组的命名/重命名对话框；确认时返回去掉首尾空白后的名称。
 internal sealed class Dialog_GroupName : Window
