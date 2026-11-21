@@ -142,9 +142,19 @@ internal sealed class ItemNode : RailNode
 
     internal override string Id => RailIds.Item(defName);
 
-    internal override string Label => designator != null
-        ? designator.Label
-        : DefDatabase<ThingDef>.GetNamedSilentFail(defName)?.LabelCap.ToString() ?? defName;
+    internal override string Label
+    {
+        get
+        {
+            if (designator != null)
+            {
+                return designator.Label;
+            }
+            Def def = (Def)DefDatabase<ThingDef>.GetNamedSilentFail(defName)
+                   ?? DefDatabase<TerrainDef>.GetNamedSilentFail(defName);
+            return def?.LabelCap.ToString() ?? defName;
+        }
+    }
 
     internal override int Indent => 1;
 

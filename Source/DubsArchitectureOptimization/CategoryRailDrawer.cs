@@ -294,7 +294,8 @@ internal static class CategoryRailDrawer
             if (RailIds.IsItem(id))
             {
                 string defName = RailIds.ItemDefName(id);
-                if (DefDatabase<ThingDef>.GetNamedSilentFail(defName) != null)
+                if (DefDatabase<ThingDef>.GetNamedSilentFail(defName) != null
+                    || DefDatabase<TerrainDef>.GetNamedSilentFail(defName) != null)
                 {
                     result.Add(new ItemNode(defName, null, null));
                 }
@@ -1200,25 +1201,79 @@ internal static class CategoryRailDrawer
         return children;
     }
 
-    // 网格显示规则：选中建筑项组时只显示该组成员（含 Orders/Zone/Floors 等非建筑条目一并排除）；
-    // 未选中组时只应用用户隐藏。
+    // 网格显示规则：先解包图标对应的全部 BuildableDef（下拉组可能有多个），再做判定。
+    // 选中项组时任一成员在组内即显示；未选中组时全部成员被隐藏才隐藏。
+    // ShouldShowInGrid 每次绘制都会调用，复用静态列表避免逐帧分配。
+    private static readonly List<string> GridDefNames = new List<string>();
+
     internal static bool ShouldShowInGrid(Designator designator)
     {
-        string defName = null;
-        if (designator is Designator_Place place
-            && place.PlacingDef is ThingDef thingDef
-            && !string.IsNullOrEmpty(thingDef.defName))
-        {
-            defName = thingDef.defName;
-        }
+        List<string> defNames = ItemDefNamesOf(designator, GridDefNames);
 
         RailGroup group = selectedGroup;
         if (group != null && group.Kind == RailGroupKind.Items)
         {
-            return defName != null && group.Members != null && group.Members.Contains(defName);
+            // 选中项组时只保留组成员；命令/计划/区域等非建造项没有 defName，同样排除。
+            if (defNames.Count == 0 || group.Members == null)
+            {
+                return false;
+            }
+            for (int i = 0; i < defNames.Count; i++)
+            {
+                if (group.Members.Contains(defNames[i]))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
-        return defName == null || !IsHidden(RailIds.Item(defName));
+        if (defNames.Count == 0)
+        {
+            return true;
+        }
+        for (int i = 0; i < defNames.Count; i++)
+        {
+            if (!IsHidden(RailIds.Item(defNames[i])))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // 一个网格图标可能对应多个 BuildableDef：普通设计器取 PlacingDef，下拉组遍历 elements。
+    internal static List<string> ItemDefNamesOf(Designator designator)
+    {
+        return ItemDefNamesOf(designator, new List<string>());
+    }
+
+    internal static List<string> ItemDefNamesOf(Designator designator, List<string> names)
+    {
+        names.Clear();
+        if (designator is Designator_Place place)
+        {
+            AddDefName(place.PlacingDef, names);
+        }
+        else if (designator is Designator_Dropdown dropdown && dropdown.Elements != null)
+        {
+            foreach (Designator element in dropdown.Elements)
+            {
+                if (element is Designator_Place elementPlace)
+                {
+                    AddDefName(elementPlace.PlacingDef, names);
+                }
+            }
+        }
+        return names;
+    }
+
+    private static void AddDefName(BuildableDef def, List<string> names)
+    {
+        if (def != null && !string.IsNullOrEmpty(def.defName) && !names.Contains(def.defName))
+        {
+            names.Add(def.defName);
+        }
     }
 
     private static ArchitectCategoryTab FindTab(MainTabWindow_MintArchitect window, string defName)
@@ -1278,12 +1333,12 @@ internal static class CategoryRailDrawer
         return group;
     }
 
-    // 网格右键：把建筑项加入项组；已在组内的项置灰，末尾可新建项组并直接加入。
-    // 已属于某个项组时，额外提供“移出所在建筑标签”。
-    internal static List<FloatMenuOption> ItemGroupMenuOptions(string defName)
+    // 网格右键：把图标对应的全部建筑项加入项组；整组已在组内时置灰。
+    // 下拉组按整组处理，加入与移出都覆盖全部成员。
+    internal static List<FloatMenuOption> ItemGroupMenuOptions(IReadOnlyList<string> defNames)
     {
         List<FloatMenuOption> options = new List<FloatMenuOption>();
-        if (string.IsNullOrEmpty(defName))
+        if (defNames == null || defNames.Count == 0)
         {
             return options;
         }
@@ -1296,10 +1351,10 @@ internal static class CategoryRailDrawer
                 continue;
             }
             RailGroup target = group;
-            bool joined = target.Members != null && target.Members.Contains(defName);
+            bool joined = defNames.All(name => target.Members != null && target.Members.Contains(name));
             groups.Add(joined
                 ? new FloatMenuOption(target.Name, null, MenuOptionPriority.DisabledOption)
-                : new FloatMenuOption(target.Name, () => AddMember(target, defName)));
+                : new FloatMenuOption(target.Name, () => AddMembers(target, defNames)));
         }
         groups.Add(new FloatMenuOption("MintTwoCol.NewItemGroup".Translate(), () =>
             Find.WindowStack.Add(new Dialog_GroupName("MintTwoCol.NewItemGroup".Translate(), string.Empty, name =>
@@ -1307,14 +1362,14 @@ internal static class CategoryRailDrawer
                 RailGroup created = CreateGroup(RailGroupKind.Items, name);
                 if (created != null)
                 {
-                    AddMember(created, defName);
+                    AddMembers(created, defNames);
                 }
             }))));
 
         options.Add(new FloatMenuOption("MintTwoCol.AddToGroup".Translate(), () => Find.WindowStack.Add(new FloatMenu(groups))));
 
         List<RailGroup> owners = MintTwoColMod.Settings.Groups
-            .Where(g => g != null && g.Kind == RailGroupKind.Items && g.Members != null && g.Members.Contains(defName))
+            .Where(g => g != null && g.Kind == RailGroupKind.Items && g.Members != null && defNames.Any(name => g.Members.Contains(name)))
             .ToList();
         if (owners.Count > 0)
         {
@@ -1322,12 +1377,20 @@ internal static class CategoryRailDrawer
             {
                 foreach (RailGroup owner in owners)
                 {
-                    owner.Members.Remove(defName);
+                    owner.Members.RemoveAll(name => defNames.Contains(name));
                 }
                 MintTwoColMod.Settings.Write();
             }));
         }
         return options;
+    }
+
+    private static void AddMembers(RailGroup target, IReadOnlyList<string> defNames)
+    {
+        foreach (string defName in defNames)
+        {
+            AddMember(target, defName);
+        }
     }
 
     private static void OpenGroupMenu(RailGroup group)
@@ -1393,7 +1456,8 @@ internal static class CategoryRailDrawer
     {
         if (kind == RailGroupKind.Items)
         {
-            ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(member);
+            Def def = (Def)DefDatabase<ThingDef>.GetNamedSilentFail(member)
+                   ?? DefDatabase<TerrainDef>.GetNamedSilentFail(member);
             return def?.LabelCap.ToString() ?? member;
         }
         DesignationCategoryDef category = DefDatabase<DesignationCategoryDef>.GetNamedSilentFail(member);

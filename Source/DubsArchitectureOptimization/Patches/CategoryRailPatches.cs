@@ -134,9 +134,11 @@ internal static class CategoryRailPatches
     }
 
     // Mint 网格/列表右键菜单入口：建筑项上追加「加入项组」，原有右键选项原样保留。
+    // 下拉组图标会解包出全部成员，按整组处理。
     private static bool RightClickMenuPrefix(Designator des)
     {
-        if (!(des is Designator_Place place) || !(place.PlacingDef is ThingDef def) || string.IsNullOrEmpty(def.defName))
+        List<string> defNames = CategoryRailDrawer.ItemDefNamesOf(des);
+        if (defNames.Count == 0)
         {
             return true;
         }
@@ -146,7 +148,7 @@ internal static class CategoryRailPatches
         {
             options.AddRange(des.RightClickFloatMenuOptions);
         }
-        options.AddRange(CategoryRailDrawer.ItemGroupMenuOptions(def.defName));
+        options.AddRange(CategoryRailDrawer.ItemGroupMenuOptions(defNames));
 
         Event.current.Use();
         if (options.Count > 0)
